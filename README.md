@@ -1,63 +1,50 @@
-# Uber & Lyft in Boston: pricing, trip distribution and a small revenue model
+# Uber & Lyft in Boston
 
-Our course project for **Transportation Planning** (Industrial Engineering, Sharif University of Technology, fall 2025).
-Everything lives in one notebook, [`transportation_project.ipynb`](transportation_project.ipynb), which runs from the raw csv to the last figure without any manual steps.
+This is our project for the Transportation Planning course at Sharif University of Technology (fall 2025). It had two phases: the first was mostly data analysis and price prediction, and the second was about OD matrices and trip distribution models. Both are in [`transportation_project.ipynb`](transportation_project.ipynb).
 
-The data is Kaggle's [Uber and Lyft Dataset Boston, MA](https://www.kaggle.com/datasets/brllrb/uber-and-lyft-dataset-boston-ma): about 693k price quotes for 12 neighbourhoods in central Boston between 26 Nov and 18 Dec 2018, each with the weather at that hour.
+We used the [Uber and Lyft Dataset Boston, MA](https://www.kaggle.com/datasets/brllrb/uber-and-lyft-dataset-boston-ma) from Kaggle. It has around 693k rows covering 12 areas of central Boston from Nov 26 to Dec 18, 2018, along with the weather for each hour.
 
-## What's in the notebook
+## Contents
 
-**Part A (phase 1)**
-- A first look at the data: missing values, the routes that appear, which services each company offers, encoding
-- Statistical tests on price: ANOVA / Welch / Kruskal-Wallis, Tukey and Games-Howell, normality tests, outlier rules
-- Weather: PCA and k-means on the weather records, and predicting rain from the other weather variables
-- Price models: feature selection (mutual information, RFECV, Lasso), linear regression, random forest, XGBoost, Taguchi L9 vs full grid search, stacking and other hybrids
+Part A (phase 1):
+- basic exploration of the data and encoding the categorical columns
+- tests on whether price depends on the service type (ANOVA, Kruskal-Wallis, Tukey, Games-Howell), normality tests and outlier removal
+- PCA and k-means on the weather data, and two classifiers for predicting rain
+- feature selection and price models: linear regression, random forest, XGBoost, tuning with Taguchi and grid search, and stacking
 
-**Part B (phase 2)**
-- OD matrices, overall and per weekday, and an inflow/outflow balance check
-- Trip distribution with Furness, Detroit, Fratar and a doubly constrained gravity model (exponential and power deterrence)
-- An integer program that plans trips for a new competitor with a 20 km/day fleet limit
+Part B (phase 2):
+- OD matrices for the whole period and for each day of the week
+- trip distribution with Furness, Detroit, Fratar and the gravity model
+- a small integer program for planning trips for a new company with a 20 km/day limit
 
-## A few things we found
+## Results
 
-- **The file isn't a trip log.** It's prices that someone scraped from the apps on a fixed schedule. Once you divide by the number of dates in the file, the weekday × hour "demand" heatmap is flat: 156 records per zone per hour. Any count of "trips" in this dataset is really a count of quotes.
-- **Price is almost entirely service type + distance + surge.** Service type alone explains about 77% of the variance. Weather, hour and date have no measurable effect.
-- **Best price model: XGBoost**, test R² 0.976 and MAE about $0.95. Taguchi found a near-optimal setting in 9 runs where the grid needed 81. Stacking matched XGBoost but didn't beat it.
-- **Rain can be predicted** from visibility, cloud cover, humidity and dew point: random forest with F1 ≈ 0.72 and ROC-AUC ≈ 0.95 on days it never saw. This only holds once `precipProbability` and the text summaries are removed, because they give the answer away.
-- **The future trip targets can't be met exactly on this network.** Trips only run between two groups of six zones, and the targets break that balance by 0.34%. That's why every distribution method "converges" in one or two iterations at 1% tolerance. With network-consistent targets, Furness is fastest and Detroit stalls at about 0.04% error.
-- **Revenue plan:** with only 20 km a day, the best plan runs Financial District → South Station over and over (about $1,830 a week). If the car has to come back to the zones it drives into, that drops to about $1,520.
+The dataset turned out not to be real trips. Someone collected price quotes from the apps on a fixed schedule, so the number of records per hour or per day tells you when the data was collected, not when people were riding. We only noticed this when we divided the counts by the number of days in the data and the heatmap went flat.
 
-| Price by service type | Records per weekday-hour, normalised |
+Price depends almost entirely on the service type, the distance and the surge multiplier (surge only exists for Lyft in this data). Weather and time of day made no difference in any of the models. XGBoost gave the best results (R² of 0.976 on the test set, mean error about $0.95). Taguchi got close to the best grid search setting with 9 runs instead of 81. Stacking didn't do better than XGBoost alone.
+
+For predicting rain, a random forest got an F1 of about 0.72 on days it hadn't seen. You have to drop precipProbability and the weather summary columns first, because they basically contain the answer.
+
+In phase 2, all the distribution methods converged in one or two iterations. That's because trips in this data only go between two groups of six areas, and the future totals we were given don't quite fit that structure, so no method can get closer than about 0.34%. With adjusted totals, Furness was the fastest and Detroit got stuck at about 0.04% error. For the revenue model, the best plan with 20 km a day earns about $1,830 a week, or about $1,520 if the car has to come back to the areas it leaves from.
+
+| | |
 |---|---|
 | ![](figures/A2_3_price_by_name.png) | ![](figures/A2_8_heatmap.png) |
-
-| All price models on the same test set | Convergence of the distribution methods |
-|---|---|
 | ![](figures/A4_6_all_models.png) | ![](figures/B2_convergence.png) |
 
-## Running it
+## How to run
 
-1. Download `rideshare_kaggle.csv` from the Kaggle link above and put it in `data/`. It's about 200 MB, so it isn't in the repo.
-2. Install the packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Open `transportation_project.ipynb` and run all cells. It takes around 10 minutes on a laptop, mostly the grid search in A-4.5.
+Download `rideshare_kaggle.csv` from Kaggle and put it in the `data` folder. It's too big to keep in the repo. Then:
 
-Figures go to `figures/`, and the OD matrices and the trip plan go to `outputs/` as Excel files.
-
-Our course gave us a trimmed copy of the Kaggle file with 39 of the 57 columns. The notebook only uses columns that are in both versions, so the full Kaggle file works too, though a few counts (duplicate rows, for example) may come out slightly different.
-
-## Layout
-
+```bash
+pip install -r requirements.txt
+jupyter notebook transportation_project.ipynb
 ```
-├── transportation_project.ipynb   the whole project
-├── requirements.txt
-├── data/                          put rideshare_kaggle.csv here (git-ignored)
-├── figures/                       every plot the notebook makes
-└── outputs/                       OD matrices, distribution results, trip plan (xlsx)
-```
+
+Running everything takes about 10 minutes, mostly because of the grid search. Plots get saved to `figures/` and the Excel outputs to `outputs/`.
+
+We had a shortened version of the csv from the course (39 of the 57 columns). The notebook only uses columns that exist in both, so the Kaggle version should work too, though some numbers may be slightly different.
 
 ## Team
 
-Amirabbas Donyadideh, Arshia Sattari Khavas, Alireza Faraji. The course was taught by Dr. Hassannayebi.
+Amirabbas Donyadideh, Arshia Sattari Khavas and Alireza Faraji. Instructor: Dr. Hassannayebi.
