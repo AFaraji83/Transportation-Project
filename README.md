@@ -21,16 +21,19 @@ Part B (phase 2):
 
 The dataset turned out not to be real trips. Someone collected price quotes from the apps on a fixed schedule, so the number of records per hour or per day tells you when the data was collected, not when people were riding. We only noticed this when we divided the counts by the number of days in the data and the heatmap went flat.
 
-Price depends almost entirely on the service type, the distance and the surge multiplier (surge only exists for Lyft in this data). Weather and time of day made no difference in any of the models. XGBoost gave the best results (R² of 0.976 on the test set, mean error about $0.95). Taguchi got close to the best grid search setting with 9 runs instead of 81. Stacking didn't do better than XGBoost alone.
+Price depends almost entirely on the service type, the distance and the surge multiplier (surge only exists for Lyft in this data). Weather and time of day made no difference in any of the models. XGBoost gave the best results (R² of 0.976 on the test set, mean error about 95 cents). Taguchi got close to the best grid search setting with 9 runs instead of 81. Stacking didn't do better than XGBoost alone.
 
 For predicting rain, a random forest got an F1 of about 0.72 on days it hadn't seen. You have to drop precipProbability and the weather summary columns first, because they basically contain the answer.
 
-In phase 2, all the distribution methods converged in one or two iterations. That's because trips in this data only go between two groups of six areas, and the future totals we were given don't quite fit that structure, so no method can get closer than about 0.34%. With adjusted totals, Furness was the fastest and Detroit got stuck at about 0.04% error. For the revenue model, the best plan with 20 km a day earns about $1,830 a week, or about $1,520 if the car has to come back to the areas it leaves from.
+In phase 2, all the distribution methods converged in one or two iterations. That's because trips in this data only go between two groups of six areas, and the future totals we were given don't quite fit that structure, so no method can get closer than about 0.34%. With adjusted totals, Furness was the fastest and Detroit got stuck at about 0.04% error. For the revenue model, the best plan with 20 km a day earns about 1,830 dollars a week, or about 1,520 if the car has to come back to the areas it leaves from.
 
-| | |
+| Price by service type | Records per weekday and hour |
 |---|---|
-| ![](figures/A2_3_price_by_name.png) | ![](figures/A2_8_heatmap.png) |
-| ![](figures/A4_6_all_models.png) | ![](figures/B2_convergence.png) |
+| <img src="figures/A2_3_price_by_name.png" width="420"> | <img src="figures/A2_8_heatmap.png" width="420"> |
+
+| Price models compared | Convergence of the distribution methods |
+|---|---|
+| <img src="figures/A4_6_all_models.png" width="420"> | <img src="figures/B2_convergence.png" width="420"> |
 
 ## How to run
 
